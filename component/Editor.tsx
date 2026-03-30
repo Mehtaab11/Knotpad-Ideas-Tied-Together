@@ -24,10 +24,15 @@ export default function Editor() {
     useEffect(() => {
         socket.emit("join-room", roomId);
 
-        socket.on("receive-changes", (newContent) => {
+        socket.on("receive-changes-content", (newContent) => {
             setContent(newContent);
         });
-        
+
+
+        socket.on("receive-changes-title", (newTitle) => {
+            setTitle(newTitle);
+        });
+
 
         return () => {
             socket.off("receive-changes");
@@ -46,7 +51,7 @@ export default function Editor() {
                 body: JSON.stringify({ id: roomId, content, title })
             })
         }, 500)
-        
+
 
         return () => clearTimeout(timeOut)
 
@@ -99,7 +104,14 @@ export default function Editor() {
                 <div className="mb-12">
                     <input
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            setTitle(e.target.value)
+                            socket.emit("send-changes-title", {
+                                roomId,
+                                title: e.target.value,
+                            });
+                        }
+                        }
                         className="w-full text-5xl text-white/80 font-medium tracking-tight placeholder:text-gray-400 outline-none border-none bg-transparent"
 
                         placeholder="Document Title"
@@ -114,7 +126,7 @@ export default function Editor() {
                         value={content}
                         onChange={(e) => {
                             setContent(e.target.value)
-                            socket.emit("send-changes", {
+                            socket.emit("send-changes-content", {
                                 roomId,
                                 content: e.target.value,
                             });

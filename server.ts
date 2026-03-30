@@ -9,18 +9,26 @@ const io = new Server(httpServer, {
   },
 });
 
+// Functions here are written with the Client Perspectives in mind, so the client is sending the data to the server and the server is broadcasting it to other clients in the same room.
+
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("User connected:",   socket.id);
 
   socket.on("join-room", (roomId: string) => {
     socket.join(roomId);
   });
 
   socket.on(
-    "send-changes",
+    "send-changes-content",
     ({ roomId, content }: { roomId: string; content: string }) => {
-      socket.to(roomId).emit("receive-changes", content);
-    }
+      socket.to(roomId).emit("receive-changes-content", content);
+    },
+  );
+  socket.on(
+    "send-changes-title",
+    ({ roomId, title }: { roomId: string; title: string }) => {
+      socket.to(roomId).emit("receive-changes-title", title);
+    },
   );
 
   socket.on("disconnect", () => {
