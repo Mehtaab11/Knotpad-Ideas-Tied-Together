@@ -1,7 +1,13 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
+import { io } from "socket.io-client";
+
+
+
+const socket = io("http://localhost:4000");
+
+
 
 export default function Editor() {
 
@@ -14,6 +20,26 @@ export default function Editor() {
     const [title, setTitle] = useState('')
     const [loading, setLoading] = useState(false)
 
+
+    useEffect(() => {
+        socket.emit("join-room", roomId);
+
+        socket.on("receive-changes-content", (newContent) => {
+            setContent(newContent);
+        });
+
+
+        socket.on("receive-changes-title", (newTitle) => {
+            setTitle(newTitle);
+        });
+
+
+        return () => {
+            socket.off("receive-changes");
+        };
+    }, [roomId]);
+
+
     useEffect(() => {
 
         if (!loading) {
@@ -25,6 +51,7 @@ export default function Editor() {
                 body: JSON.stringify({ id: roomId, content, title })
             })
         }, 500)
+
 
         return () => clearTimeout(timeOut)
 
@@ -52,14 +79,14 @@ export default function Editor() {
     }, [roomId])
 
     return (
-  <div className="min-h-screen bg-black text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+        <div className="min-h-screen bg-black text-slate-900 selection:bg-blue-100 selection:text-blue-900">
             {/* THIN TOP NAV */}
             <nav className="h-14 border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 bg-white/80 backdrop-blur-md z-50">
                 <div className="flex items-center gap-4">
                     <span className="text-sm font-bold tracking-tighter border-r border-black pr-4">DOC_OS</span>
                     <span className="text-[10px] font-bold">ID: {roomId}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-6">
                     <span className="text-[10px] uppercase tracking-widest text-black font-semibold flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
@@ -77,7 +104,14 @@ export default function Editor() {
                 <div className="mb-12">
                     <input
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            setTitle(e.target.value)
+                            socket.emit("send-changes-title", {
+                                roomId,
+                                title: e.target.value,
+                            });
+                        }
+                        }
                         className="w-full text-5xl text-white/80 font-medium tracking-tight placeholder:text-gray-400 outline-none border-none bg-transparent"
 
                         placeholder="Document Title"
@@ -90,7 +124,13 @@ export default function Editor() {
                         className="w-full h-[70vh] text-xl leading-[1.8] text-white/80 placeholder:text-slate-400 outline-none border-none bg-transparent resize-none font-normal"
                         placeholder="Start writing..."
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={(e) => {
+                            setContent(e.target.value)
+                            socket.emit("send-changes-content", {
+                                roomId,
+                                content: e.target.value,
+                            });
+                        }}
                     />
                 </div>
 
