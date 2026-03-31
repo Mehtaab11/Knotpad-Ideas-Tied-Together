@@ -21,6 +21,8 @@ export default function Editor() {
     const [content, setContent] = useState('')
     const [title, setTitle] = useState('')
     const [loading, setLoading] = useState(false)
+    const [isTyping, setIsTyping] = useState(false)
+
 
 
     useEffect(() => {
@@ -51,6 +53,21 @@ export default function Editor() {
             socket.off("users")
         }
     }, [])
+
+
+    useEffect(() => {
+        socket.on("user-typing", () => {
+            setIsTyping(true);
+
+            setTimeout(() => {
+                setIsTyping(false);
+            }, 1000); // disappears after 1s
+        });
+
+        return () => {
+            socket.off("user-typing");
+        };
+    }, []);
 
     useEffect(() => {
 
@@ -115,11 +132,13 @@ export default function Editor() {
                 {users.map((user) => (
                     <div key={user} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">
 
-                        {user.slice(0,5)}
+                        {user.slice(0, 5)}
                     </div>
                 ))}
 
             </div>
+
+
 
             <main className="max-w-3xl mx-auto pt-24 px-6 pb-32">
                 {/* TITLE SECTION */}
@@ -132,13 +151,22 @@ export default function Editor() {
                                 roomId,
                                 title: e.target.value,
                             });
+
+                            socket.emit("typing", roomId)
                         }
                         }
                         className="w-full text-5xl text-white/80 font-medium tracking-tight placeholder:text-gray-400 outline-none border-none bg-transparent"
 
                         placeholder="Document Title"
                     />
+
                 </div>
+                {isTyping &&
+                    <div className="text-sm text-white italic mb-2">
+                        Someone is typing...
+                    </div>
+                }
+
 
                 {/* CONTENT SECTION */}
                 <div className="relative">
@@ -152,6 +180,7 @@ export default function Editor() {
                                 roomId,
                                 content: e.target.value,
                             });
+                            socket.emit("typing", roomId)
                         }}
                     />
                 </div>

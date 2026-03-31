@@ -28,6 +28,10 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("users", rooms[roomId]);
   });
 
+  socket.on("typing", (roomId: string) => {
+    socket.to(roomId).emit("user-typing");
+  });
+
   socket.on(
     "send-changes-content",
     ({ roomId, content }: { roomId: string; content: string }) => {
@@ -46,7 +50,7 @@ io.on("connection", (socket) => {
 
     for (const roomId in rooms) {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
-      
+
       io.to(roomId).emit("users", rooms[roomId]);
     }
   });
