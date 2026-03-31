@@ -12,10 +12,12 @@ const socket = io("http://localhost:4000");
 export default function Editor() {
 
 
+
     const {
         roomId
     } = useParams()
 
+    const [users, setUsers] = useState<string[]>([]);
     const [content, setContent] = useState('')
     const [title, setTitle] = useState('')
     const [loading, setLoading] = useState(false)
@@ -23,6 +25,7 @@ export default function Editor() {
 
     useEffect(() => {
         socket.emit("join-room", roomId);
+
 
         socket.on("receive-changes-content", (newContent) => {
             setContent(newContent);
@@ -39,6 +42,15 @@ export default function Editor() {
         };
     }, [roomId]);
 
+    useEffect(() => {
+        socket.on("users", (usersList) => {
+            setUsers(usersList)
+        })
+
+        return () => {
+            socket.off("users")
+        }
+    }, [])
 
     useEffect(() => {
 
@@ -98,6 +110,16 @@ export default function Editor() {
                     </button>
                 </div>
             </nav>
+
+            <div className="flex gap-2 mb-4 flex-wrap">
+                {users.map((user) => (
+                    <div key={user} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">
+
+                        {user.slice(0,5)}
+                    </div>
+                ))}
+
+            </div>
 
             <main className="max-w-3xl mx-auto pt-24 px-6 pb-32">
                 {/* TITLE SECTION */}
