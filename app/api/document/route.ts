@@ -1,39 +1,50 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/generated/prisma/prisma";
 
-export async function POST(req: Request) {
-  const { id, content, title } = await req.json();
-
-  if (!id) {
-    return NextResponse.json({ error: "No Id Provided " }, { status: 400 });
-  }
-
-  const doc = await prisma.document.upsert({
-    where: {
-      id,
-    },
-    update: { content, title },
-    create: {
-      title: title || "Untitled Document",
-      id: id,
-      content: content || "",
-    },
+//request to get all the document
+export async function GET() {
+  const docs = await prisma.document.findMany({
+    orderBy: { createdAt: "desc" },
   });
-
-  return NextResponse.json(doc);
+  return NextResponse.json(docs);
 }
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+// Request to post a new doc in the storage
+export async function POST(req: Request) {
+  try {
+    const { id, content, title } = await req.json();
 
-  if (!id) {
-    return NextResponse.json({ error: "No Id Provided " }, { status: 400 });
+    // If there is no ID, it's a brand new document
+    if (!id) {
+      const newDoc = await prisma.document.create({
+        data: {
+          title: title || "Untitled Document",
+          content: content || "",
+        },
+      });
+      return NextResponse.json(newDoc);
+    }
+
+    // If there IS an ID, we update or create (upsert)
+    const doc = await prisma.document.upsert({
+      where: { id: id },
+      update: {
+        title: title ?? "Untitled Document",
+        content: content ?? "",
+      },
+      create: {
+        id: id,
+        title: title || "Untitled Document",
+        content: content || "",
+      },
+    });
+
+    return NextResponse.json(doc);
+  } catch (error) {
+    console.error("Request Error", error);
+    return NextResponse.json(
+      { error: "Failed to process document" },
+      { status: 500 },
+    );
   }
-
-  const doc = await prisma.document.findUnique({
-    where: { id: id },
-  });
-  console.log(doc);
-  return NextResponse.json(doc);
 }
