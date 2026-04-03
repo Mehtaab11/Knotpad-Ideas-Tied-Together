@@ -3,15 +3,9 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { io } from "socket.io-client";
 
-
-
 const socket = io("http://localhost:4000");
 
-
-
 export default function Editor() {
-
-
 
     const {
         roomId
@@ -27,7 +21,6 @@ export default function Editor() {
 
     useEffect(() => {
         socket.emit("join-room", roomId);
-
 
         socket.on("receive-changes-content", (newContent) => {
             setContent(newContent);
@@ -91,9 +84,10 @@ export default function Editor() {
 
     useEffect(() => {
         const load = async () => {
-            const res = await fetch(`/api/document?id=${roomId}`)
+            const res = await fetch(`/api/document/${roomId}`)
             const data = await res.json()
 
+            console.log("Response is here")
             console.log(data)
 
             if (data) {
@@ -191,7 +185,7 @@ export default function Editor() {
                     <button className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-900 hover:text-slate-900 transition-all font-serif italic">i</button>
                     <div className="w-[1px] h-4 bg-slate-200 mx-1" />
                     <span className="px-3 text-[10px]  text-slate-900 uppercase tracking-tighter">
-                        {content.length} chars
+                        {content && content.length} chars
                     </span>
                 </div>
             </main>
